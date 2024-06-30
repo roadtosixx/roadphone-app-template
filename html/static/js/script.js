@@ -40,7 +40,7 @@ function newElement() {
   var t = document.createTextNode(inputValue);
   li.appendChild(t);
   if (inputValue === '') {
-    post('notification', {message: 'You must write something!'})
+    post('sendNotification', {message: 'You must write something!'})
   } else {
     document.getElementById("myUL").appendChild(li);
   }

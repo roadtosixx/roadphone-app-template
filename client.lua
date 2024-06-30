@@ -5,7 +5,14 @@ end)
 
 RegisterNUICallback('sendNotification', function(data, cb)
 
-
+    local notifyData = {
+        apptitle = "Settings",
+        title = "No message",
+        message = data.message,
+        img = "/public/img/Apps/settingsapp.png"
+    }
+    
+    exports["roadphone"]:sendNotification(notifyData)
     cb('ok')
 end)
 
