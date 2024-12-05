@@ -16,4 +16,12 @@ RegisterNUICallback('sendNotification', function(data, cb)
     cb('ok')
 end)
 
+RegisterCommand('testNUIMessage', function()
+
+    exports['roadphone']:SendMessageNUI({
+        customevent = "test"
+    })
+    
+end, false)
+
 
