@@ -14,7 +14,7 @@ Go to roadphone/public/static/config/config.json, scroll down to AppStore and ad
 
 {
     "name": "Template App",
-    "icon": "/public/img/Apps/custom.jpg",
+    "icon": "/public/img/Apps/light_mode/custom.webp",
     "default": true,
     "category": "apps",
     "custom_app_id": "TEMPLATE_APP_1",
