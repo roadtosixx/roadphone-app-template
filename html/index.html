@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>RoadPhone Custom App Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* Hide scrollbar but keep scrolling */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+
+    * {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', 'Segoe UI', sans-serif;
+      transition: background-color 0.3s, color 0.3s;
+      font-size: 14px;
+    }
+
+    body.dark {
+      background-color: #000000;
+      color: #ffffff;
+    }
+
+    body.light {
+      background-color: #f2f2f7;
+      color: #1d1d1f;
+    }
+
+    .app-container {
+      width: 100%;
+      height: 100%;
+      padding: 12px;
+      padding-top: 45px;
+      overflow-y: auto;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 8px 0 16px;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .header-subtitle {
+      font-size: 12px;
+      color: #86868b;
+      margin-top: 4px;
+    }
+
+    /* Section */
+    .section {
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #86868b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      padding-left: 8px;
+    }
+
+    /* Card Group */
+    .card-group {
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    body.light .card-group {
+      background: #ffffff;
+    }
+
+    body.dark .card-group {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Card */
+    .card {
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card:not(:last-child) {
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+    }
+
+    body.dark .card:not(:last-child) {
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .card-label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .card-value {
+      font-size: 14px;
+      color: #86868b;
+      text-align: right;
+      max-width: 55%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Status Indicator */
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .status-dot.active {
+      background: #34c759;
+    }
+
+    .status-dot.inactive {
+      background: #ff3b30;
+    }
+
+    /* Button */
+    .button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.1s;
+    }
+
+    .button:active {
+      transform: scale(0.98);
+      opacity: 0.8;
+    }
+
+    .button-primary {
+      background: #007aff;
+      color: #ffffff;
+    }
+
+    body.dark .button-primary {
+      background: #0a84ff;
+    }
+
+    .button-secondary {
+      background: rgba(0, 122, 255, 0.15);
+      color: #007aff;
+    }
+
+    body.dark .button-secondary {
+      background: rgba(10, 132, 255, 0.2);
+      color: #0a84ff;
+    }
+
+    .button-success {
+      background: #34c759;
+      color: #ffffff;
+    }
+
+    body.dark .button-success {
+      background: #30d158;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Event Log */
+    .event-log {
+      border-radius: 12px;
+      padding: 10px;
+      font-family: 'SF Mono', 'Menlo', monospace;
+      font-size: 11px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    body.light .event-log {
+      background: #ffffff;
+    }
+
+    body.dark .event-log {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .event-log-item {
+      padding: 4px 0;
+      border-bottom: 0.5px solid rgba(128, 128, 128, 0.2);
+    }
+
+    .event-log-item:last-child {
+      border-bottom: none;
+    }
+
+    .event-log-time {
+      color: #86868b;
+      margin-right: 6px;
+    }
+
+    .event-log-empty {
+      color: #86868b;
+      text-align: center;
+      padding: 10px;
+    }
+
+    /* API Status Banner */
+    .api-banner {
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+
+    .api-banner.connected {
+      background: rgba(52, 199, 89, 0.15);
+      color: #34c759;
+    }
+
+    .api-banner.disconnected {
+      background: rgba(255, 59, 48, 0.15);
+      color: #ff3b30;
+    }
+
+    body.dark .api-banner.connected {
+      background: rgba(48, 209, 88, 0.2);
+      color: #30d158;
+    }
+
+    body.dark .api-banner.disconnected {
+      background: rgba(255, 69, 58, 0.2);
+      color: #ff453a;
+    }
+  </style>
+</head>
+<body class="light">
+  <div class="app-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-title">Custom App Demo</div>
+      <div class="header-subtitle">RoadPhone API Template</div>
+    </div>
+
+    <!-- API Status -->
+    <div class="api-banner disconnected" id="apiBanner">
+      API Not Available
+    </div>
+
+    <!-- Player Info Section -->
+    <div class="section">
+      <div class="section-title">Player Information</div>
+      <div class="card-group">
+        <div class="card">
+          <span class="card-label">Name</span>
+          <span class="card-value" id="playerName">-</span>
+        </div>
+        <div class="card">
+          <span class="card-label">Phone Number</span>
+          <span class="card-value" id="phoneNumber">-</span>
+        </div>
+        <div class="card">
+          <span class="card-label">Job</span>
+          <span class="card-value" id="job">-</span>
+        </div>
+        <div class="card">
+          <span class="card-label">Identifier</span>
+          <span class="card-value" id="identifier">-</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Section -->
+    <div class="section">
+      <div class="section-title">Phone Settings</div>
+      <div class="card-group">
+        <div class="card">
+          <span class="card-label">Dark Mode</span>
+          <div class="status-indicator">
+            <span class="status-dot inactive" id="darkModeDot"></span>
+            <span class="card-value" id="darkMode">Off</span>
+          </div>
+        </div>
+        <div class="card">
+          <span class="card-label">Brightness</span>
+          <span class="card-value" id="brightness">-</span>
+        </div>
+        <div class="card">
+          <span class="card-label">Flight Mode</span>
+          <div class="status-indicator">
+            <span class="status-dot inactive" id="flightModeDot"></span>
+            <span class="card-value" id="flightMode">Off</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions Section -->
+    <div class="section">
+      <div class="section-title">Test Actions</div>
+      <div class="button-group">
+        <button class="button button-primary" onclick="sendNotification()">
+          Send Test Notification
+        </button>
+        <button class="button button-secondary" onclick="postToLua()">
+          Send Data to Lua
+        </button>
+        <button class="button button-success" onclick="refreshData()">
+          Refresh All Data
+        </button>
+      </div>
+    </div>
+
+    <!-- Event Log Section -->
+    <div class="section">
+      <div class="section-title">Event Log</div>
+      <div class="event-log" id="eventLog">
+        <div class="event-log-empty">No events yet...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Access the RoadPhone API from parent window (we're in an iframe)
+    const roadphone = window.parent.roadphone
+
+    // Event log
+    const events = []
+
+    function logEvent(message) {
+      const now = new Date()
+      const time = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      events.unshift({ time, message })
+
+      // Keep only last 20 events
+      if (events.length > 20) events.pop()
+
+      updateEventLog()
+    }
+
+    function updateEventLog() {
+      const logEl = document.getElementById('eventLog')
+
+      if (events.length === 0) {
+        logEl.innerHTML = '<div class="event-log-empty">No events yet...</div>'
+        return
+      }
+
+      logEl.innerHTML = events.map(e =>
+        `<div class="event-log-item"><span class="event-log-time">${e.time}</span>${e.message}</div>`
+      ).join('')
+    }
+
+    // Initialize the app
+    function init() {
+      if (!roadphone) {
+        console.error('RoadPhone API not available')
+        document.getElementById('apiBanner').textContent = 'API Not Available - Run inside RoadPhone'
+        document.getElementById('apiBanner').classList.remove('connected')
+        document.getElementById('apiBanner').classList.add('disconnected')
+        logEvent('API not available')
+        return
+      }
+
+      // API connected
+      document.getElementById('apiBanner').textContent = 'API Connected (v' + roadphone.version + ')'
+      document.getElementById('apiBanner').classList.remove('disconnected')
+      document.getElementById('apiBanner').classList.add('connected')
+      logEvent('API connected')
+
+      // Load initial data
+      refreshData()
+
+      // Subscribe to events
+      roadphone.on('darkModeChanged', (isDark) => {
+        logEvent('darkModeChanged: ' + isDark)
+        applyTheme(isDark)
+        updateDarkModeDisplay(isDark)
+      })
+
+      roadphone.on('brightnessChanged', (brightness) => {
+        logEvent('brightnessChanged: ' + brightness + '%')
+        document.getElementById('brightness').textContent = brightness + '%'
+      })
+
+      roadphone.on('flightModeChanged', (isEnabled) => {
+        logEvent('flightModeChanged: ' + isEnabled)
+        updateFlightModeDisplay(isEnabled)
+      })
+
+      roadphone.on('phoneOpened', () => {
+        logEvent('phoneOpened')
+      })
+
+      roadphone.on('phoneClosed', () => {
+        logEvent('phoneClosed')
+      })
+
+      logEvent('Event listeners registered')
+    }
+
+    // Refresh all data from API
+    function refreshData() {
+      if (!roadphone) return
+
+      // Player info
+      document.getElementById('playerName').textContent = roadphone.getPlayerName() || 'Unknown'
+      document.getElementById('phoneNumber').textContent = roadphone.getPhoneNumber() || 'Unknown'
+      document.getElementById('job').textContent = roadphone.getJob() || 'Unemployed'
+      document.getElementById('identifier').textContent = roadphone.getIdentifier() || 'Unknown'
+
+      // Settings
+      const isDark = roadphone.isDarkMode()
+      applyTheme(isDark)
+      updateDarkModeDisplay(isDark)
+
+      document.getElementById('brightness').textContent = roadphone.getBrightness() + '%'
+
+      updateFlightModeDisplay(roadphone.isFlightMode())
+
+      logEvent('Data refreshed')
+    }
+
+    // Apply theme
+    function applyTheme(isDark) {
+      document.body.classList.remove('dark', 'light')
+      document.body.classList.add(isDark ? 'dark' : 'light')
+    }
+
+    // Update dark mode display
+    function updateDarkModeDisplay(isDark) {
+      document.getElementById('darkMode').textContent = isDark ? 'On' : 'Off'
+      const dot = document.getElementById('darkModeDot')
+      dot.classList.remove('active', 'inactive')
+      dot.classList.add(isDark ? 'active' : 'inactive')
+    }
+
+    // Update flight mode display
+    function updateFlightModeDisplay(isEnabled) {
+      document.getElementById('flightMode').textContent = isEnabled ? 'On' : 'Off'
+      const dot = document.getElementById('flightModeDot')
+      dot.classList.remove('active', 'inactive')
+      dot.classList.add(isEnabled ? 'active' : 'inactive')
+    }
+
+    // Send test notification
+    function sendNotification() {
+      if (!roadphone) {
+        alert('API not available')
+        return
+      }
+
+      roadphone.showNotification({
+        appTitle: 'Custom App Demo',
+        title: 'Test Notification',
+        message: 'This notification was sent from the Custom App Demo!'
+      })
+
+      logEvent('Notification sent')
+    }
+
+    // Post data to Lua backend
+    function postToLua() {
+      if (!roadphone) {
+        alert('API not available')
+        return
+      }
+
+      roadphone.post('customAppDemo', {
+        action: 'test',
+        timestamp: Date.now(),
+        message: 'Hello from Custom App Demo!'
+      })
+
+      logEvent('Data posted to Lua')
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init)
+    } else {
+      init()
+    }
+  </script>
+</body>
+</html>
