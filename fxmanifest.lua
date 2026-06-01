@@ -3,8 +3,8 @@ game 'gta5'
 
 name 'roadphone-customapp-demo'
 author 'RoadPhone'
-description 'Demo/Template Custom App for RoadPhone-Pro - Shows how to use the window.roadphone API'
-version '1.0.0'
+description 'Demo/Template Custom App for RoadPhone-Pro - Shows the window.roadphone API v1.3.0 (storage, permissions, lifecycle events)'
+version '1.3.0'
 
 -- IMPORTANT: Do NOT use ui_page here!
 -- The HTML is loaded inside RoadPhone's iframe, not as a standalone NUI.
