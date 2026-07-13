@@ -23,12 +23,14 @@ you need into your own app.
    {
      "AppStore": {
        "CustomApp": {
-         "url": "nui://roadphone-customapp-demo/html/index.html",
+         "url": "https://cfx-nui-roadphone-customapp-demo/html/index.html",
          "darkmode": true
        }
      }
    }
    ```
+   A FiveM resource is served at `https://cfx-nui-<resource>/…` — that is the URL
+   the iframe loads. (`nui://<resource>/…` is the older form and does not load here.)
 5. Restart, open the phone, tap the Custom App icon.
 
 ## The five things that trip everyone up
