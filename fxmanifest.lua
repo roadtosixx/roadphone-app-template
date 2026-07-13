@@ -3,24 +3,30 @@ game 'gta5'
 
 name 'roadphone-customapp-demo'
 author 'RoadPhone'
-description 'Demo/Template Custom App for RoadPhone-Pro - Shows the window.roadphone API v1.3.0 (storage, permissions, lifecycle events)'
-version '1.3.0'
+description 'Demo/Template Custom App for RoadPhone-Pro — a live tour of the window.roadphone API'
+version '2.0.0'
 
--- IMPORTANT: Do NOT use ui_page here!
--- The HTML is loaded inside RoadPhone's iframe, not as a standalone NUI.
--- We only need to make the file accessible via nui:// protocol.
-
--- Files accessible by NUI (for RoadPhone iframe)
+-- IMPORTANT: never use ui_page here!
+-- The HTML loads inside RoadPhone's iframe, not as a standalone NUI. With
+-- ui_page the app renders fullscreen instead of inside the phone.
 files {
-    'html/index.html'
+    'html/index.html',
+    'html/css/app.css',
+    'html/js/app.js',
 }
 
--- Client Scripts (optional - for NUI callbacks)
+shared_scripts {
+    'config.lua',
+}
+
 client_scripts {
-    'client/client.lua'
+    'bridge/client.lua',
+    'client/client.lua',
 }
 
--- Server Scripts (optional - for server-side logic)
 server_scripts {
-    'server/server.lua'
+    'bridge/server.lua',
+    'server/server.lua',
 }
+
+dependency 'roadphone'

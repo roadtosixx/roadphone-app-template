@@ -1,0 +1,140 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   UNITS: everything is sized in `vh`, never px.
+
+   RoadPhone scales the phone with CSS `zoom`, and the phone screen itself is
+   sized in viewport units of the GAME window. This app runs in an iframe filling
+   that screen, so the iframe's viewport grows and shrinks with the player's
+   phone-size setting and with their game resolution. A layout in fixed px does
+   NOT follow — at 150% phone size the text stays small while the screen around
+   it grows.
+
+   `1vh` here = 1% of the phone screen height, whatever size that currently is.
+   RoadPhone's own apps are written the same way.
+
+   Hairline borders stay at 0.5px on purpose — a scaled hairline just turns into
+   a blurry grey smear.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+* { margin: 0; padding: 0; box-sizing: border-box;
+  -webkit-user-select: none; -moz-user-select: none; user-select: none;
+  -webkit-touch-callout: none; }
+/* keep text editable/selectable inside form fields */
+input, textarea { -webkit-user-select: text; -moz-user-select: text; user-select: text; }
+::-webkit-scrollbar { display: none; }
+html, body { width: 100%; height: 100%; overflow: hidden; -ms-overflow-style: none; scrollbar-width: none; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', 'Segoe UI', sans-serif;
+  font-size: 2.04vh; transition: background-color .25s, color .25s;
+}
+body.light { background: #f2f2f7; color: #1d1d1f; }
+body.dark  { background: #000; color: #fff; }
+
+:root { --accent: #0a84ff; --danger: #ff453a; --warn: #ff9f0a; --ok: #30d158; }
+
+/* Layout: scrollable screen above a fixed tab bar */
+.screen { position: absolute; top: 0; left: 0; right: 0; bottom: 10.03vh;
+  padding: 6.12vh 2.17vh 2.17vh; overflow-y: auto; }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 10.03vh;
+  display: flex; padding-bottom: 2.46vh; border-top: .5px solid rgba(128,128,128,.3);
+  backdrop-filter: blur(20px); }
+body.light .tabbar { background: rgba(249,249,249,.94); }
+body.dark  .tabbar { background: rgba(20,20,22,.94); }
+.tab { flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: .26vh; color: #8e8e93; cursor: pointer; font-size: 1.36vh; }
+.tab svg { width: 2.98vh; height: 2.98vh; }
+.tab.active { color: var(--accent); }
+
+/* Large title */
+.lg-title { font-size: 3.82vh; font-weight: 700; margin: .81vh 0 .4vh; }
+.subtitle { font-size: 1.78vh; color: #8e8e93; margin-bottom: 1.91vh; }
+
+/* Grouped inset list */
+.group { border-radius: 1.61vh; overflow: hidden; margin-bottom: 2.46vh; }
+body.light .group { background: #fff; }
+body.dark  .group { background: rgba(255,255,255,.08); }
+.group-title { font-size: 1.61vh; font-weight: 600; color: #8e8e93; text-transform: uppercase;
+  letter-spacing: .4px; margin: 0 0 .94vh .81vh; }
+.group-note { font-size: 1.61vh; color: #8e8e93; margin: -1.7vh .81vh 2.46vh; line-height: 1.35; }
+.cell { display: flex; align-items: center; gap: 1.36vh; padding: 1.61vh 1.91vh; }
+.cell.tappable { cursor: pointer; }
+.cell:not(:last-child) { border-bottom: .5px solid rgba(128,128,128,.18); }
+.cell-main { flex: 1; min-width: 0; text-align: left; }
+.cell-title { font-size: 2.04vh; font-weight: 500; }
+.cell-sub { font-size: 1.61vh; color: #8e8e93; margin-top: .17vh; }
+.cell-value { font-size: 1.91vh; color: #8e8e93; text-align: right; max-width: 55%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell-value.mono { font-family: 'SF Mono', Menlo, monospace; font-size: 1.7vh; }
+.cell-chevron { color: #c7c7cc; font-size: 2.29vh; }
+
+/* Banner (API status) */
+.banner { padding: 1.36vh; border-radius: 1.36vh; text-align: center; font-size: 1.78vh;
+  font-weight: 500; margin-bottom: 1.91vh; }
+.banner.ok  { background: rgba(48,209,88,.18); color: var(--ok); }
+.banner.bad { background: rgba(255,69,58,.18); color: var(--danger); }
+
+/* Badges (feature flags, permission states) */
+.badge { font-size: 1.49vh; font-weight: 700; padding: .26vh 1.1vh; border-radius: 2.72vh;
+  flex-shrink: 0; }
+.badge.on      { background: rgba(48,209,88,.18);  color: var(--ok); }
+.badge.off     { background: rgba(142,142,147,.2); color: #8e8e93; }
+.badge.granted { background: rgba(48,209,88,.18);  color: var(--ok); }
+.badge.denied  { background: rgba(255,69,58,.18);  color: var(--danger); }
+.badge.ask     { background: rgba(255,159,10,.18); color: var(--warn); }
+
+/* Inputs / buttons */
+.field { width: 100%; padding: 1.49vh 1.61vh; border: none; border-radius: 1.36vh; font-size: 2.04vh;
+  font-family: inherit; outline: none; margin-bottom: 1.36vh; }
+body.light .field { background: #fff; color: #1d1d1f; }
+body.dark  .field { background: rgba(255,255,255,.08); color: #fff; }
+textarea.field { resize: none; min-height: 9vh; }
+/* fields have no border, so show focus as an accent ring */
+.field:focus { box-shadow: 0 0 0 .26vh var(--accent); caret-color: var(--accent); }
+body.dark .field:focus { background: rgba(255,255,255,.14); }
+
+.btn { width: 100%; padding: 1.78vh; border: none; border-radius: 1.61vh; font-size: 2.04vh;
+  font-weight: 600; font-family: inherit; cursor: pointer; margin-top: .81vh; }
+.btn:active { opacity: .85; transform: scale(.99); }
+.btn:disabled { opacity: .45; pointer-events: none; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-secondary { background: rgba(10,132,255,.15); color: var(--accent); }
+.btn-danger { background: rgba(255,69,58,.16); color: var(--danger); }
+.btn-row { display: flex; gap: 1.36vh; }
+.btn-row .btn { margin-top: .81vh; }
+
+/* Input-with-trailing-button (emoji) */
+.field-row { display: flex; gap: 1.1vh; align-items: flex-start; }
+.field-row .field { margin-bottom: 0; }
+.emoji-btn { flex-shrink: 0; width: 6.2vh; padding: 1.49vh 0; border: none; border-radius: 1.36vh;
+  font-size: 2.4vh; font-family: inherit; cursor: pointer; }
+body.light .emoji-btn { background: #fff; }
+body.dark  .emoji-btn { background: rgba(255,255,255,.08); }
+
+/* Focus pill — live readout of the inputFocus state */
+.focus-pill { display: inline-flex; align-items: center; gap: .68vh; font-size: 1.61vh;
+  font-weight: 600; padding: .43vh 1.36vh; border-radius: 2.72vh; margin-bottom: 1.36vh;
+  background: rgba(142,142,147,.2); color: #8e8e93; }
+.focus-pill.on { background: rgba(48,209,88,.18); color: var(--ok); }
+.focus-dot { width: 1.02vh; height: 1.02vh; border-radius: 50%; background: currentColor; }
+
+/* Photo preview */
+.shot { width: 100%; height: 20vh; border-radius: 1.61vh; object-fit: cover; background: #d1d1d6;
+  margin-bottom: 1.36vh; }
+
+/* Event log */
+.log { border-radius: 1.61vh; padding: 1.36vh; font-family: 'SF Mono', Menlo, monospace;
+  font-size: 1.53vh; line-height: 1.5; }
+body.light .log { background: #fff; }
+body.dark  .log { background: rgba(255,255,255,.08); }
+.log-item { padding: .6vh 0; border-bottom: .5px solid rgba(128,128,128,.18); text-align: left;
+  word-break: break-word; }
+.log-item:last-child { border-bottom: none; }
+.log-time { color: #8e8e93; margin-right: .85vh; }
+.log-name { color: var(--accent); }
+
+/* Empty + toast */
+.empty { text-align: center; color: #8e8e93; padding: 4vh 1.36vh; font-size: 1.91vh; }
+.toast { position: absolute; left: 50%; bottom: 11.9vh; transform: translateX(-50%);
+  background: rgba(0,0,0,.85); color: #fff; padding: 1.23vh 2.17vh; border-radius: 2.72vh;
+  font-size: 1.78vh; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 50;
+  max-width: 80%; text-align: center; }
+.toast.show { opacity: 1; }
