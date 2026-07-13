@@ -1,247 +1,149 @@
 # RoadPhone Custom App Demo
 
-A demo/template custom app for **RoadPhone-Pro** that showcases the `window.roadphone` API **v1.3.0**.
+A runnable tour of the `window.roadphone` API (**v1.3.0**). Every tab is a working
+example of one part of the API — install it, tap through it, then copy the parts
+you need into your own app.
 
-## Features
+| Tab | Shows |
+|-----|-------|
+| **Phone** | `getPlayerName/getPhoneNumber/getJob/getIdentifier`, `isDarkMode`, `getBrightness`, `isFlightMode`, `getLanguage`, `copyToClipboard`, version + feature flags, app identity |
+| **UI** | **`inputFocus`**, `pickEmoji`, `showBottomSheet`, `takePhoto` + `claimPhoto`, `showNotification`, a server RPC round-trip |
+| **Data** | `contacts.*`, `messages.*`, `bank.*`, `alarms.*` — all permission-gated |
+| **Storage** | `storage.*` (local) vs `storage.metadata.*` (rides on the phone item), `permissions.*` |
+| **Events** | Every event the API fires, live |
 
-- 🎨 **Theme-Aware** — Auto-adapts to the phone's dark/light mode
-- 📱 **Player Info** — Name, phone number, job, identifier, language
-- ⚙️ **Settings Display** — Brightness, flight mode, dark mode (live-updating)
-- 💾 **Storage Demo** — Both `localStorage` and **phone-metadata** backends (v1.3.0)
-- 🔐 **Permission Flow** — iOS-style consent prompt for sensitive APIs (v1.3.0)
-- 📇 **Phone Data Access** — Read contacts, bank balance through permission-gated APIs (v1.3.0)
-- 🔄 **Version Negotiation** — Fails loudly on Phones too old to run the demo (v1.3.0)
-- 🆔 **App Identity** — Sets a stable namespace so storage doesn't collide with other apps (v1.3.0)
-- 📡 **Lua Integration** — `roadphone.post()` example with NUI callback handler
-- 📋 **Live Event Log** — All API events streamed in real time (incl. new lifecycle events)
+## Install
 
-## What's new in this template (v1.3.0)
+1. Copy `roadphone-customapp-demo` into `resources/`.
+2. Set `Config.Framework` in `config.lua` (`esx` / `qbcore` / `qbox` / `standalone`).
+   On **Qbox**, also add `'@ox_lib/init.lua'` to `shared_scripts` — the bridge uses `lib.callback`.
+3. Add to `server.cfg`, **after** roadphone: `ensure roadphone-customapp-demo`
+4. Point the CustomApp slot at it in `public/static/config/config.json`:
+   ```json
+   {
+     "AppStore": {
+       "CustomApp": {
+         "url": "nui://roadphone-customapp-demo/html/index.html",
+         "darkmode": true
+       }
+     }
+   }
+   ```
+5. Restart, open the phone, tap the Custom App icon.
 
-This template was rewritten against the **RoadPhone v1.3.0 Custom App API**. If
-you're upgrading from the older v1.0 template, the key additions are:
+## The five things that trip everyone up
 
-- `roadphone.minVersion('1.3.0')` and `roadphone.requireFeature('storage')` at startup
-- `roadphone.app.setName(...)` + `roadphone.app.setNamespace(...)` for identity
-- `roadphone.storage.*` (localStorage backend, sync) and `roadphone.storage.metadata.*` (phone-metadata backend, async, survives phone trades)
-- `roadphone.contacts.list()`, `roadphone.bank.getBalance()` — permission-gated reads
-- New event listeners: `appOpened`, `appClosed`, `incomingCall`, `callEnded`, `notificationReceived`, `languageChanged`
+### 1. Text input does nothing until you call `inputFocus`
 
-## Installation
+The phone opens with `SetNuiFocusKeepInput(true)` so WASD still drives the game
+while the phone is up. The price: **keystrokes do not reach your inputs**. Tap a
+field, type, and nothing happens — while your keys steer the player instead.
 
-### 1. Copy the Resource
+Delegate it once on the document and every field, present and future, works:
 
-Copy the `roadphone-customapp-demo` folder to your FiveM server's `resources` directory:
-
-```
-resources/
-└── roadphone-customapp-demo/
-    ├── fxmanifest.lua
-    ├── html/
-    │   └── index.html
-    ├── client/
-    │   └── client.lua
-    └── server/
-        └── server.lua
-```
-
-### 2. Add to server.cfg
-
-```cfg
-ensure roadphone-customapp-demo
+```js
+document.addEventListener('focusin',  e => isField(e.target) && rp.inputFocus(true))
+document.addEventListener('focusout', e => isField(e.target) && rp.inputFocus(false))
 ```
 
-### 3. Configure RoadPhone
+### 2. The API lives on the parent window
 
-In `public/static/config/config.json`, set the CustomApp URL:
+Your app is an iframe *inside* the phone, so it's `window.parent.roadphone` —
+`window.roadphone` is undefined.
 
-```json
-{
-  "AppStore": {
-    "CustomApp": {
-      "url": "nui://roadphone-customapp-demo/html/index.html",
-      "darkmode": true
-    }
-  }
-}
+### 3. `alert()` / `confirm()` / `prompt()` crash the game
+
+FiveM's CEF has no dialog implementation. Use a toast (see `toast()` in `app.js`)
+and `rp.showBottomSheet()` as your `confirm()`.
+
+### 4. The camera reloads your app
+
+Routing to the camera **unmounts the iframe**, so `await rp.takePhoto()` never
+resolves — your app reboots from scratch. Persist what you'd lose, fire without
+awaiting, and pick the shot back up on boot:
+
+```js
+localStorage.setItem('pending', JSON.stringify({ tab, draft }))
+rp.takePhoto({ allowVideo: false })      // do NOT await
+// …iframe reloads…
+const shot = rp.claimPhoto()             // { url, isVideo } | null
 ```
 
-### 4. Restart Server
+### 5. Size in `vh`, never `px`
 
-`refresh` then `ensure roadphone-customapp-demo`, or restart the server.
+RoadPhone scales the phone with CSS `zoom`, so the iframe's viewport grows and
+shrinks with the player's phone-size setting. A `px` layout doesn't follow — at
+150% the text stays small while the screen around it grows. `1vh` = 1% of the
+phone screen, whatever size it currently is.
 
-### 5. Open the App
+## Talking to Lua
 
-In-game, open the phone and tap the Custom App icon.
+A custom app has **no `ui_page`**, so FiveM does not reliably route
+`https://<this-resource>/…` fetches — the app may not reach its own NUI callbacks.
+Two transports land on the same server callback, and `app.js` tries the direct one
+first and falls back to RoadPhone's bridge, so it works either way:
 
-## API Usage
+```
+a) UI: fetch('https://<resource>/rpc', { name, data })
+     → client/client.lua  RegisterNUICallback('rpc')
 
-The template demonstrates all major surfaces of the v1.3.0 API:
+b) UI: await roadphone.post('customAppRpc', { resource, name, data })
+     → RoadPhone's client relay
 
-```javascript
-// Access API from iframe (we're inside the phone's <iframe>)
-const roadphone = window.parent.roadphone
-
-// ─── Recommended startup ──────────────────────────────────────────────
-roadphone.minVersion('1.3.0')               // throws if Phone too old
-roadphone.requireFeature('storage')         // throws if feature missing
-roadphone.app.setName('My App')             // shown in permission prompts
-roadphone.app.setNamespace('my-app')        // isolates your data
-
-// ─── Getters ──────────────────────────────────────────────────────────
-roadphone.isDarkMode()        // boolean
-roadphone.getPlayerName()     // string
-roadphone.getPhoneNumber()    // string
-roadphone.getJob()            // string
-roadphone.getIdentifier()     // string
-roadphone.getBrightness()     // number 10-100
-roadphone.isFlightMode()      // boolean
-roadphone.getLanguage()       // 1.3.0 — locale code, e.g. "de_DE"
-
-// ─── Storage (1.3.0) ──────────────────────────────────────────────────
-// localStorage backend — sync, survives reload
-roadphone.storage.set('city', 'Berlin')
-roadphone.storage.get('city')                        // → 'Berlin'
-roadphone.storage.delete('city')
-roadphone.storage.keys()                             // → ['city', ...]
-roadphone.storage.clear()
-
-// Metadata backend — async, survives phone trades / character switches
-await roadphone.storage.metadata.set('city', 'Berlin')
-const city = await roadphone.storage.metadata.get('city')
-await roadphone.storage.metadata.delete('city')
-
-// ─── Permissions (1.3.0) ──────────────────────────────────────────────
-const ok = await roadphone.permissions.request('contacts.read')
-roadphone.permissions.has('contacts.read')           // boolean
-roadphone.permissions.revoke('contacts.read')
-roadphone.permissions.list()                         // all decisions
-
-// ─── Phone data (1.3.0, permission-gated) ─────────────────────────────
-const contacts = await roadphone.contacts.list()     // [{ id, firstname, ... }]
-const c = await roadphone.contacts.find('1234567')
-const count = await roadphone.contacts.count()
-
-await roadphone.messages.send('1234567', 'Hi!')
-const msgs = await roadphone.messages.list('1234567')
-
-const balance = await roadphone.bank.getBalance()
-const iban = await roadphone.bank.getIban()
-const accounts = await roadphone.bank.getAccounts()
-
-const alarms = await roadphone.alarms.list()
-await roadphone.alarms.create({ time: '07:30', label: 'Wake up' })
-await roadphone.alarms.delete(id)
-
-// ─── Native UI ────────────────────────────────────────────────────────
-roadphone.showNotification({ appTitle, title, message, icon })
-const photo = await roadphone.takePhoto({ allowVideo: false })
-const choice = await roadphone.showBottomSheet({ groups: [...] })
-const emoji = await roadphone.pickEmoji()
-roadphone.copyToClipboard('text')
-
-// ─── Lua bridge ───────────────────────────────────────────────────────
-roadphone.post('eventName', { data })
-
-// ─── Events ───────────────────────────────────────────────────────────
-roadphone.on('darkModeChanged', (isDark) => {})
-roadphone.on('brightnessChanged', (value) => {})
-roadphone.on('flightModeChanged', (isEnabled) => {})
-roadphone.on('phoneOpened', () => {})
-roadphone.on('phoneClosed', () => {})
-
-// 1.3.0 lifecycle events:
-roadphone.on('languageChanged', (lang) => {})
-roadphone.on('appOpened', ({ app, path }) => {})
-roadphone.on('appClosed', ({ app, path }) => {})
-roadphone.on('incomingCall', ({ number, isAnonym }) => {})
-roadphone.on('callEnded', ({ number }) => {})
-roadphone.on('notificationReceived', (notif) => {})
+both → Bridge.TriggerCallback('roadphone:customApp:<resource>', …)
+     → server/server.lua  Bridge.RegisterCallback(…) → Handlers[name] → reply(result)
+     → resolves the UI's awaited api() call
 ```
 
-## Permission Scopes
-
-Sensitive APIs are gated behind permission scopes. The user is prompted with an
-iOS-style action sheet on first use; their decision is remembered.
-
-| Scope | Required by |
-|-------|-------------|
-| `contacts.read` | `contacts.list/find/count` |
-| `messages.read` | `messages.list/conversations` |
-| `messages.send` | `messages.send` |
-| `bank.read` | `bank.getBalance/getIban/getAccounts` |
-| `alarms.read` | `alarms.list` |
-| `alarms.write` | `alarms.create/delete` |
-| `storage.metadata` | `storage.metadata.*` |
-
-If the user denies, the gated call **rejects** with
-`Error: Permission '<scope>' denied by user`. Always wrap in `try/catch`:
-
-```javascript
-try {
-  const contacts = await roadphone.contacts.list()
-  render(contacts)
-} catch (e) {
-  // user denied — show a fallback UI
-}
-```
-
-## Important Notes
-
-⚠️ **Do NOT use `ui_page` in fxmanifest.lua!**
-
-The custom app runs inside RoadPhone's iframe. `ui_page` will cause the app to
-render fullscreen instead of inside the phone.
+Add a handler in `server/server.lua` and the UI can call it immediately:
 
 ```lua
--- ❌ WRONG - Don't do this!
-ui_page 'html/index.html'
-
--- ✅ CORRECT - Only declare files
-files {
-    'html/index.html'
-}
+Handlers['myThing'] = function(src, player, data, reply)
+    reply({ ok = true, hello = player.name })
+end
 ```
 
-## Customization
-
-Modify `html/index.html` as a starting point for your own app. The script
-section is heavily commented and structured by feature area.
-
-### Storage isolation
-
-Always set a unique namespace at startup:
-
-```javascript
-roadphone.app.setNamespace('your-stable-app-id')
+```js
+const res = await api('myThing', { some: 'payload' })
 ```
 
-Without this, your data lands in the shared `default` namespace and may
-collide with other custom apps.
+> **Unwrapping (b):** `roadphone.post()` parses the response, and when Lua replies
+> with a *table* the payload ends up at `res.data` instead of on `res` itself.
+> Always unwrap (`res.data !== undefined ? res.data : res`) — see `unwrapPost()` in
+> `app.js`. Reading `res.ok` off the raw return value is the single most common
+> custom-app bug.
 
-### Styling Tips
+### Pushing to the app from the server
 
-- Use `px` units (the iframe has its own viewport — `vh` would be too small)
-- Add `padding-top: 45px` for the phone status bar
-- Hide the scrollbar with CSS for a native feel
-- Support both light and dark themes — listen to `darkModeChanged` and toggle a body class
+`SendNUIMessage()` from this resource has **no document to deliver to** and cannot
+reach the iframe. Server → player pushes go through RoadPhone's own NUI:
 
-### Version-gating
-
-Always declare the minimum API version you depend on, so older Phones fail
-loudly instead of silently misbehaving:
-
-```javascript
-try {
-  roadphone.minVersion('1.3.0')
-} catch (e) {
-  // show a "please update" screen instead of letting the app crash mid-flow
-}
+```lua
+TriggerClientEvent('roadphone:sendNotification', src, {
+    apptitle = 'My App', title = 'Heads up', message = '…',
+    img = '/public/img/Apps/light_mode/custom.webp',
+})
 ```
 
-## Documentation
+For live data, have the app refetch when a tab is (re)opened.
 
-For full API reference: [docs.roadshop.org](https://docs.roadshop.org)
+## Permissions
+
+Contacts, messages, bank, alarms and metadata storage are gated. The first gated
+call pops an iOS-style consent sheet; the answer is remembered **per namespace**,
+which is why you set one at startup:
+
+```js
+rp.app.setName('My App')          // shown in the prompt
+rp.app.setNamespace('my-app')     // scopes storage AND permission answers
+```
+
+A denied call **rejects** — always `try/catch` (see `guard()` in `app.js`).
+
+## Docs
+
+Full API reference: [docs.roadshop.org](https://docs.roadshop.org)
 
 ## License
 
-MIT — feel free to use this as the basis for your own custom apps.
+MIT — use it as the starting point for your own app.
